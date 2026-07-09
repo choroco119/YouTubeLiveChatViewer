@@ -530,42 +530,50 @@ impl App {
         self.save_logs();
     }
 
-    fn save_logs(&self) {
-        if self.messages.is_empty() { return; }
-
+    fn get_log_dir(&self) -> std::path::PathBuf {
+        if !self.settings.log_dir.trim().is_empty() {
+            let path = std::path::PathBuf::from(&self.settings.log_dir);
+            if path.exists() || std::fs::create_dir_all(&path).is_ok() {
+                return path;
+            }
+        }
         let exe_dir = std::env::current_exe()
             .ok()
             .and_then(|p| p.parent().map(|d| d.to_path_buf()))
             .unwrap_or_else(|| std::path::PathBuf::from("."));
-        let log_dir = exe_dir.join("logs");
+        exe_dir.join("logs")
+    }
+
+    fn save_logs(&self) {
+        if self.messages.is_empty() { return; }
+
+        let log_dir = self.get_log_dir();
         let _ = std::fs::create_dir_all(&log_dir);
 
         let now = chrono::Local::now();
-        let filename = format!("log_{}.txt", now.format("%Y%m%d_%H%M%S"));
+        let filename = format!("log_{}.md", now.format("%Y%m%d_%H%M%S"));
         let path = log_dir.join(filename);
 
-        let mut content = format!("配信タイトル: {}\n", self.video_title);
-        content.push_str(&format!("動画ID/URL: {}\n", self.video_id_input));
-        content.push_str(&format!("保存日時: {}\n", now.format("%Y-%m-%d %H:%M:%S")));
-        content.push_str("--------------------------------------------------\n");
+        let mut content = format!("# 配信ログ\n\n");
+        content.push_str(&format!("- **配信タイトル**: {}\n", self.video_title));
+        content.push_str(&format!("- **動画ID/URL**: {}\n", self.video_id_input));
+        content.push_str(&format!("- **保存日時**: {}\n\n", now.format("%Y-%m-%d %H:%M:%S")));
+        content.push_str("---\n\n");
 
         for msg in &self.messages {
             let time = msg.timestamp.format("%H:%M:%S");
-            content.push_str(&format!("[{}] [{}] {}: {}\n", time, msg.author_id, msg.author, msg.message));
+            content.push_str(&format!("- [{}] [{}] **{}**: {}\n", time, msg.author_id, msg.author, msg.message));
         }
 
         let _ = std::fs::write(path, content);
     }
 
     fn load_log_file(&mut self) {
-        let exe_dir = std::env::current_exe()
-            .ok()
-            .and_then(|p| p.parent().map(|d| d.to_path_buf()))
-            .unwrap_or_else(|| std::path::PathBuf::from("."));
-        let log_dir = exe_dir.join("logs");
+        let log_dir = self.get_log_dir();
 
         if let Some(path) = rfd::FileDialog::new()
             .set_directory(&log_dir)
+            .add_filter("Markdown files", &["md"])
             .add_filter("Text files", &["txt"])
             .pick_file() 
         {
@@ -576,28 +584,44 @@ impl App {
 
                 let mut in_logs = false;
                 for line in content.lines() {
-                    if line.starts_with("------------------") {
+                    let trimmed_line = line.trim();
+                    if trimmed_line.starts_with("---") {
                         in_logs = true;
                         continue;
                     }
                     if !in_logs {
-                        if let Some(title) = line.strip_prefix("配信タイトル: ") {
+                        if let Some(title) = trimmed_line.strip_prefix("配信タイトル: ") {
+                            self.video_title = format!("(ログ) {}", title);
+                        } else if let Some(title) = trimmed_line.strip_prefix("- **配信タイトル**: ") {
                             self.video_title = format!("(ログ) {}", title);
                         }
                         continue;
                     }
 
-                    // 形式: [HH:MM:SS] [ID] Author: Message
-                    if line.starts_with('[') && line.contains("] ") {
-                        let parts: Vec<&str> = line.splitn(3, "] ").collect();
+                    // Markdown形式 (先頭が "- [" または "* [") のトリム処理
+                    let is_md_line = trimmed_line.starts_with("- [") || trimmed_line.starts_with("* [");
+                    let clean_line = if is_md_line {
+                        &trimmed_line[2..]
+                    } else {
+                        trimmed_line
+                    };
+
+                    // 形式: [HH:MM:SS] [ID] Author: Message または **Author**: Message
+                    if clean_line.starts_with('[') && clean_line.contains("] ") {
+                        let parts: Vec<&str> = clean_line.splitn(3, "] ").collect();
                         if parts.len() == 3 {
                             let time_str = parts[0].trim_start_matches('[');
                             let author_id = parts[1].trim_start_matches('[');
                             let rest = parts[2];
                             
                             if let Some(sep_pos) = rest.find(": ") {
-                                let author = &rest[..sep_pos];
+                                let mut author = &rest[..sep_pos];
                                 let message = &rest[sep_pos + 2..];
+                                
+                                // Markdownの強調表示 "**" のトリム
+                                if author.starts_with("**") && author.ends_with("**") && author.len() > 4 {
+                                    author = &author[2..author.len() - 2];
+                                }
                                 
                                 // 時刻のパース
                                 let now = chrono::Local::now();
@@ -1367,6 +1391,27 @@ impl App {
             if ui.button("📜 ログを読み込む").clicked() {
                 self.load_log_file();
             }
+            ui.add_space(8.0);
+            
+            ui.label(RichText::new("📂 ログ保存先フォルダ").strong());
+            ui.horizontal(|ui| {
+                let display_dir = if self.settings.log_dir.is_empty() {
+                    "（デフォルト: logs/）".to_string()
+                } else {
+                    self.settings.log_dir.clone()
+                };
+                ui.label(&display_dir);
+                if ui.button("変更").clicked() {
+                    if let Some(path) = rfd::FileDialog::new().pick_folder() {
+                        self.settings.log_dir = path.to_string_lossy().to_string();
+                        self.save_settings();
+                    }
+                }
+                if !self.settings.log_dir.is_empty() && ui.button("初期化").clicked() {
+                    self.settings.log_dir.clear();
+                    self.save_settings();
+                }
+            });
         });
     }
 

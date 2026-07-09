@@ -80,6 +80,8 @@ pub struct Settings {
     pub obs_server_port: u16,
     #[serde(default = "default_gemini_name")]
     pub gemini_name: String,
+    #[serde(default)]
+    pub log_dir: String,
 }
 
 impl Default for Settings {
@@ -107,6 +109,7 @@ impl Default for Settings {
             obs_server_enabled: false,
             obs_server_port: default_obs_server_port(),
             gemini_name: default_gemini_name(),
+            log_dir: String::new(),
         }
     }
 }
