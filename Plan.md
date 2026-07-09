@@ -47,13 +47,36 @@
 3. **初期コミットの作成**:
    - `git add .` を実行し、`git commit -m "feat: 開発引き継ぎと仕様書の作成およびリリースビルドの配置"` でコミットします。
 4. **リモートリポジトリ（GitHub）の登録**:
-   - あなたからGitHubのリポジトリURL（`https://github.com/ユーザー名/リポジトリ名.git` など）を教えてもらい、`git remote add origin <URL>` を実行します。
+   - `https://github.com/choroco119/YouTubeLiveChatViewer.git` を `origin` として登録します。（これから実行）
 5. **プッシュの実行**:
-   - デフォルトブランチを `main` に設定し、GitHubへプッシュします（`git push -u origin main`）。
+   - リモートの既存内容を破棄し、現在のローカルを正とするために、強制プッシュ（`git push -u origin main --force`）を実行します。
+
 
 ## 修正・新規作成対象ファイル
 - `Plan.md` （本ファイル、更新）
 - `AICHANGELOG.md` （変更履歴、更新）
 - `.gitignore` （更新、完了）
+
+# README.md アップデート計画
+
+## 目的
+現在の実際の機能（読み替え辞書）とデータファイル（dictionary.json）に合わせて、README.md の内容を最新化し、正確にします。
+
+## 手順
+1. **README.md の編集**:
+   - 「主な機能」に「読み替え辞書（ユーザー辞書）」を追加。
+   - 「データファイルについて」に `dictionary.json` を追加。
+2. **ローカルGitでのコミット**:
+   - `git add README.md Plan.md AICHANGELOG.md` を行い、`git commit -m "docs: 読み替え辞書機能の漏れをREADME.mdに追記"` でコミットします。
+3. **GitHubへのプッシュ**:
+   - `git push origin main` を実行してGitHubにプッシュします。
+4. **変更履歴の更新**:
+   - `AICHANGELOG.md` に今回の修正内容を記録します。
+
+## 修正・新規作成対象ファイル
+- `Plan.md` （本ファイル、更新）
+- `README.md` （更新）
+- `AICHANGELOG.md` （変更履歴、更新）
+
 
 
