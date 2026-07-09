@@ -1,0 +1,34 @@
+[package]
+name = "youtube-live-chat-viewer"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "youtube-live-chat-viewer"
+path = "src/main.rs"
+
+[dependencies]
+eframe = { version = "0.29", features = ["default"] }
+egui = "0.29"
+tokio = { version = "1", features = ["full"] }
+reqwest = { version = "0.12", features = ["json"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+regex = "1"
+chrono = { version = "0.4" }
+rfd = "0.15"
+rodio = "0.19"
+image = "0.25"
+
+[dependencies.windows]
+version = "0.58"
+features = [
+    "Win32_System_Com",
+    "Win32_System_Ole",
+    "Win32_Foundation",
+]
+
+[profile.release]
+opt-level = 3
+strip = true
+lto = true

@@ -1,0 +1,23 @@
+# OBS配信用ローカルWebサーバー 実装タスクリスト
+
+- [x] 設定情報の拡張
+  - [x] `src/settings.rs` に `obs_server_enabled` と `obs_server_port` の設定項目を追加
+  - [x] デフォルト設定の更新とシリアライズ・デシリアライズの確認
+- [x] Webサーバーモジュールの新規作成
+  - [x] `src/web_server.rs` の新規作成
+  - [x] 共有状態管理用の `WebServerState` 構造体を定義
+  - [x] `TcpListener` を使用した超軽量なHTTPサーバーの実装
+  - [x] `/` (HTML返却) と `/api/response` (JSON返却) エンドポイントの実装
+  - [x] HTML内にスタイリッシュなCSSとJavaScriptの自動更新（ポーリング＆フェードアニメーション）処理を実装
+- [x] アプリ側との連携とUIの実装
+  - [x] `src/app.rs` でのWebサーバーのライフサイクル管理（起動、停止、再起動）の実装
+  - [x] Geminiの回答受信時にWebサーバー状態の `latest_response` を更新する処理の追加
+  - [x] 左設定パネルに「OBS配信用サーバーの有効化」と「ポート番号」の設定項目を追加
+  - [x] URLのクリップボードコピーボタンを追加
+  - [x] アプリ終了時にWebサーバーを安全にクローズする処理
+- [x] モジュールの登録とコンパイル確認
+  - [x] `src/main.rs` に `mod web_server;` を追加
+  - [x] `cargo check` および `cargo build --release` でのビルド確認
+- [x] 動作検証
+  - [x] ローカルブラウザからの表示テスト（アニメーションとデータ更新の挙動確認）
+  - [x] OBS의 ブラウザソースによる透過表示の動作確認
